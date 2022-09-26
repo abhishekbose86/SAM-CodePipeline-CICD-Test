@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Test SAM Deployment Lambda and API Gateway
+Resources:
+  SAMLambdaFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      CodeUri: app.py
+      Events:
+        HelloWorld:
+            Type: Api
+            Properties:
+                RestApiId: !Ref ApiGateway
+                Path: /hello/node
+                Method: get
+      Layers:
+        - !Ref PydashLayer          
+  
+  PydashLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: .
+      CompatibleRuntimes:
+        - python3.9
+  ApiGateway:
+    Type: 'AWS::Serverless::Api'
+    Properties:
+        StageName: "Dev"
+        TracingEnabled: true
+        MethodSettings:
+            - HttpMethod: "*"
+              MetricsEnabled: true
+              ResourcePath: "/*"
+              DataTraceEnabled: true
+              LoggingLevel: ERROR # Valid options are `INFO` for debugging, or `ERROR`
+        Cors: "'*'"
+  ApiGatewayAccountConfig:
+    Type: "AWS::ApiGateway::Account"
+    Properties:
+        CloudWatchRoleArn: !GetAtt "ApiGatewayLoggingRole.Arn"
+  ApiGatewayLoggingRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+        AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+                - Effect: Allow
+                  Principal:
+                      Service:
+                          - "apigateway.amazonaws.com"
+                  Action: "sts:AssumeRole"
+        Path: "/"
+        ManagedPolicyArns:
+            - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+Outputs:
+    ApiURL:
+        Description: "API URL"
+        Value: !Join
+            - ''
+            - - !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/"
+              - "Dev"            
