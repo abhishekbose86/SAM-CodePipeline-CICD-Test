@@ -6,7 +6,7 @@ phases:
   build:
     commands:
       - sam build --template template.yml --manifest layers\requirements.txt
-      - sam package --template-file .aws-sam/build/template.yaml --s3-bucket abhipriya-test-bucket --output-template-file packaged-template.yml
+      - sam package --template-file .aws-sam/build/template.yaml --s3-bucket codepipeline-us-east-2-4476029391 --output-template-file packaged-template.yml
 artifacts:
   files:
     - packaged-template.yml
